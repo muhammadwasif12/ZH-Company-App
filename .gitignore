@@ -1,0 +1,46 @@
+# Environment & Secrets
+.env
+.env.*
+*.env
+local.properties
+android/local.properties
+key.properties
+*.keystore
+*.jks
+*.p12
+*.pem
+*.crt
+*.key
+credentials.json
+
+# IDEs & OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+*.swp
+*.class
+*.log
+
+# Flutter & Build
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub/
+.pub-cache/
+/build/
+/coverage/
+/android/app/debug
+/android/app/profile
+/android/app/release
+/android/.gradle
+/android/.kotlin
+/android/build
+/android/app/build
+/android/.cxx
+
+# Miscellaneous
+.history
+.svn/
+migrate_working_dir/
