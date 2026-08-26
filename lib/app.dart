@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_auth/local_auth.dart';
@@ -14,6 +16,12 @@ import 'features/auth/screens/login_screen.dart';
 import 'models/enums.dart';
 import 'panels/admin/admin_panel.dart';
 import 'panels/staff/staff_panel.dart';
+
+/// Whether the app is running on a desktop operating system.
+bool get isDesktopPlatform {
+  if (kIsWeb) return false;
+  return Platform.isWindows || Platform.isLinux || Platform.isMacOS;
+}
 
 class BeonCosmeticApp extends ConsumerWidget {
   const BeonCosmeticApp({super.key});
@@ -73,8 +81,10 @@ class _SplashGateState extends ConsumerState<_SplashGate> {
       return const LoginScreen();
     }
 
-    // Authenticated — check if admin needs biometric lock
+    // Authenticated — check if admin needs biometric lock (mobile only)
     if (authState.role == UserRole.admin) {
+      // Desktop has no fingerprint hardware — skip lock gate entirely
+      if (isDesktopPlatform) return const AdminPanel();
       return _AdminLockGate(authState: authState);
     }
 

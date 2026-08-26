@@ -24,6 +24,44 @@ class AdminPanel extends ConsumerStatefulWidget {
 class _AdminPanelState extends ConsumerState<AdminPanel> {
   int _bottomNavIndex = 0;
   String? _drawerScreen;
+  bool _isSidebarCollapsed = false;
+
+  /// Unified key for the sidebar — maps both bottom-nav indices and drawer keys.
+  String get _activeKey {
+    if (_drawerScreen != null) return _drawerScreen!;
+    switch (_bottomNavIndex) {
+      case 1: return 'orders';
+      case 2: return 'products';
+      case 3: return 'reports';
+      default: return 'dashboard';
+    }
+  }
+
+  void _selectSidebarItem(String key) {
+    setState(() {
+      switch (key) {
+        case 'dashboard':
+          _drawerScreen = null;
+          _bottomNavIndex = 0;
+          break;
+        case 'orders':
+          _drawerScreen = null;
+          _bottomNavIndex = 1;
+          break;
+        case 'products':
+          _drawerScreen = null;
+          _bottomNavIndex = 2;
+          break;
+        case 'reports':
+          _drawerScreen = null;
+          _bottomNavIndex = 3;
+          break;
+        default:
+          _drawerScreen = key;
+          break;
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -37,6 +75,408 @@ class _AdminPanelState extends ConsumerState<AdminPanel> {
     final userName = authState.profile?.fullName ?? 'Admin';
     final userRole = authState.role?.label ?? 'Admin';
 
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth > 900;
+        if (isWide) {
+          return _buildDesktopLayout(userName, userRole);
+        }
+        return _buildMobileLayout(userName, userRole);
+      },
+    );
+  }
+
+  // ─── Desktop Layout ───────────────────────────────────────
+  Widget _buildDesktopLayout(String userName, String userRole) {
+    final email = ref.read(authProvider).profile?.email ??
+        ref.read(authProvider).supabaseUser?.email ?? '';
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: Row(
+        children: [
+          // Permanent / Collapsible sidebar
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeInOut,
+            width: _isSidebarCollapsed ? 72 : 260,
+            clipBehavior: Clip.hardEdge,
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              border: Border(right: BorderSide(color: AppColors.border)),
+            ),
+            child: Column(
+              children: [
+                // Sidebar header
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    _isSidebarCollapsed ? 8 : 20,
+                    24,
+                    _isSidebarCollapsed ? 8 : 20,
+                    8,
+                  ),
+                  child: _isSidebarCollapsed
+                      ? Column(
+                          children: [
+                            Image.asset(
+                              'assets/logo/splashscreen.png',
+                              height: 36,
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, _, _) => const Icon(
+                                Icons.storefront_rounded,
+                                color: AppColors.primary,
+                                size: 30,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Column(
+                          children: [
+                            Image.asset(
+                              'assets/logo/splashscreen.png',
+                              height: 54,
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, _, _) => const Icon(
+                                Icons.storefront_rounded,
+                                color: AppColors.primary,
+                                size: 40,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              userName,
+                              style: AppTypography.h4.copyWith(
+                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (email.isNotEmpty)
+                              Text(
+                                email,
+                                style: AppTypography.caption.copyWith(
+                                  color: AppColors.textTertiary,
+                                  fontSize: 11,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: AppColors.primary.withValues(alpha: 0.3),
+                                ),
+                              ),
+                              child: Text(
+                                userRole.toUpperCase(),
+                                style: AppTypography.caption.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 9,
+                                  letterSpacing: 0.8,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+                Divider(
+                  color: AppColors.border.withValues(alpha: 0.5),
+                  height: 24,
+                ),
+                // Nav items
+                Expanded(
+                  child: ListView(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: _isSidebarCollapsed ? 8 : 12,
+                    ),
+                    children: [
+                      if (!_isSidebarCollapsed) _sidebarLabel('MAIN'),
+                      _sidebarItem('dashboard', 'Dashboard', Icons.space_dashboard_outlined, Icons.space_dashboard_rounded),
+                      _sidebarItem('orders', 'Orders', Icons.receipt_long_outlined, Icons.receipt_long_rounded),
+                      _sidebarItem('products', 'Products', Icons.inventory_2_outlined, Icons.inventory_2_rounded),
+                      _sidebarItem('reports', 'Reports', Icons.bar_chart_outlined, Icons.bar_chart_rounded),
+                      SizedBox(height: _isSidebarCollapsed ? 8 : 16),
+                      if (!_isSidebarCollapsed) _sidebarLabel('MANAGEMENT'),
+                      _sidebarItem('staff', 'Staff Management', Icons.people_alt_outlined, Icons.people_alt_rounded),
+                      _sidebarItem('cod_ledger', 'COD Ledger', Icons.account_balance_wallet_outlined, Icons.account_balance_wallet_rounded),
+                      _sidebarItem('salary', 'Salary & Payouts', Icons.payments_outlined, Icons.payments_rounded),
+                      _sidebarItem('settings', 'System Settings', Icons.tune_outlined, Icons.tune_rounded),
+                    ],
+                  ),
+                ),
+                // Sign out
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    _isSidebarCollapsed ? 8 : 16,
+                    8,
+                    _isSidebarCollapsed ? 8 : 16,
+                    20,
+                  ),
+                  child: ClipRect(
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () async => await ref.read(authProvider.notifier).signOut(),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            vertical: 12,
+                            horizontal: _isSidebarCollapsed ? 0 : 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.error.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: AppColors.error.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: _isSidebarCollapsed
+                              ? const Tooltip(
+                                  message: 'Sign Out',
+                                  child: Center(
+                                    child: Icon(
+                                      Icons.logout_rounded,
+                                      color: AppColors.error,
+                                      size: 18,
+                                    ),
+                                  ),
+                                )
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(
+                                      Icons.logout_rounded,
+                                      color: AppColors.error,
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Flexible(
+                                      child: Text(
+                                        'Sign Out',
+                                        overflow: TextOverflow.ellipsis,
+                                        style: AppTypography.button.copyWith(
+                                          color: AppColors.error,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Main content area
+          Expanded(
+            child: Column(
+              children: [
+                // Desktop top bar
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    border: Border(
+                      bottom: BorderSide(
+                        color: AppColors.border.withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => setState(() => _isSidebarCollapsed = !_isSidebarCollapsed),
+                        icon: Icon(
+                          _isSidebarCollapsed ? Icons.menu_rounded : Icons.menu_open_rounded,
+                          color: AppColors.textPrimary,
+                        ),
+                        tooltip: _isSidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar',
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        _getFullTitle(_activeKey),
+                        style: AppTypography.h2.copyWith(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: () => _showProfileMenu(context, userName, userRole),
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [AppColors.primary, AppColors.accentPurple],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Center(
+                            child: Text(
+                              userName.isNotEmpty ? userName[0].toUpperCase() : 'A',
+                              style: AppTypography.h4.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: KeyedSubtree(
+                      key: ValueKey(_activeKey),
+                      child: Align(
+                        alignment: Alignment.topCenter,
+                        child: _buildCurrentBody(),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sidebarLabel(String text) => Padding(
+    padding: const EdgeInsets.only(left: 8, bottom: 8, top: 4),
+    child: Text(
+      text,
+      style: AppTypography.caption.copyWith(
+        color: AppColors.textTertiary,
+        fontWeight: FontWeight.bold,
+        fontSize: 10,
+        letterSpacing: 1.2,
+      ),
+    ),
+  );
+
+  Widget _sidebarItem(String key, String title, IconData icon, IconData activeIcon) {
+    final isActive = _activeKey == key;
+    if (_isSidebarCollapsed) {
+      return Container(
+        margin: const EdgeInsets.only(bottom: 4),
+        child: Tooltip(
+          message: title,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => _selectSidebarItem(key),
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 11),
+                decoration: BoxDecoration(
+                  color: isActive ? AppColors.primary.withValues(alpha: 0.12) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isActive ? AppColors.primary.withValues(alpha: 0.3) : Colors.transparent,
+                  ),
+                ),
+                child: Center(
+                  child: Icon(
+                    isActive ? activeIcon : icon,
+                    color: isActive ? AppColors.primary : AppColors.textTertiary,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    return ClipRect(
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 4),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => _selectSidebarItem(key),
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+              decoration: BoxDecoration(
+                color: isActive ? AppColors.primary.withValues(alpha: 0.12) : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isActive ? AppColors.primary.withValues(alpha: 0.3) : Colors.transparent,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    isActive ? activeIcon : icon,
+                    color: isActive ? AppColors.primary : AppColors.textTertiary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Flexible(
+                    child: Text(
+                      title,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                      style: AppTypography.bodySmall.copyWith(
+                        color: isActive ? AppColors.textPrimary : AppColors.textSecondary,
+                        fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  if (isActive)
+                    Container(
+                      width: 3,
+                      height: 16,
+                      margin: const EdgeInsets.only(left: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _getFullTitle(String key) {
+    switch (key) {
+      case 'dashboard': return 'Dashboard';
+      case 'orders': return 'Orders';
+      case 'products': return 'Products';
+      case 'reports': return 'Reports';
+      case 'staff': return 'Staff Management';
+      case 'cod_ledger': return 'COD Ledger';
+      case 'salary': return 'Salary & Payouts';
+      case 'settings': return 'Settings';
+      default: return 'Dashboard';
+    }
+  }
+
+  // ─── Mobile Layout (unchanged) ────────────────────────────
+  Widget _buildMobileLayout(String userName, String userRole) {
     return PopScope(
       canPop: _drawerScreen == null && _bottomNavIndex == 0,
       onPopInvokedWithResult: (didPop, result) {
@@ -59,7 +499,10 @@ class _AdminPanelState extends ConsumerState<AdminPanel> {
           duration: const Duration(milliseconds: 200),
           switchInCurve: Curves.easeOutCubic,
           switchOutCurve: Curves.easeInCubic,
-          child: _buildCurrentBody(),
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: _buildCurrentBody(),
+          ),
         ),
         bottomNavigationBar: _drawerScreen == null ? _buildFloatingNav() : null,
       ),

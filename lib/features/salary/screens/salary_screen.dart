@@ -56,37 +56,54 @@ class _SalaryScreenState extends ConsumerState<SalaryScreen> {
       return q.isEmpty || s.name.toLowerCase().contains(q) || s.staffCode.toLowerCase().contains(q) || (s.email ?? '').toLowerCase().contains(q);
     }).toList();
     final orders = ref.watch(ordersProvider).orders;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 28),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        LayoutBuilder(builder: (context, constraints) {
-          final title = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Salary Management', style: AppTypography.h1.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
-            const SizedBox(height: AppSpacing.xs),
-            Text('Current-month staff salary and performance summary', style: AppTypography.bodySmall.copyWith(color: AppColors.textTertiary)),
-          ]);
-          final button = OutlinedButton.icon(
-            onPressed: _recalculating ? null : _recalculate,
-            icon: _recalculating ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.calculate_rounded, size: 20),
-            label: Text(_recalculating ? 'Calculating...' : 'Recalculate'),
-          );
-          return constraints.maxWidth < 560 ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [title, const SizedBox(height: 12), button]) : Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Expanded(child: title), button]);
-        }),
-        const SizedBox(height: AppSpacing.md),
-        SizedBox(width: double.infinity, child: TextField(
-          controller: _searchController,
-          onChanged: (value) => setState(() => _query = value),
-          decoration: InputDecoration(hintText: 'Search staff by name, code or email...', prefixIcon: const Icon(Icons.search_rounded), suffixIcon: _query.isEmpty ? null : IconButton(icon: const Icon(Icons.clear_rounded), onPressed: () { _searchController.clear(); setState(() => _query = ''); }), filled: true, fillColor: AppColors.surface, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border))),
-        )),
-        const SizedBox(height: AppSpacing.md),
-        Container(padding: const EdgeInsets.all(AppSpacing.md), decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.primary.withValues(alpha: 0.18))), child: Text('Formula: Final salary = commission earned - return penalty. Fixed commission is per delivered order; percentage commission uses delivered COD.', style: AppTypography.bodySmall.copyWith(color: AppColors.primary))),
-        const SizedBox(height: AppSpacing.lg),
-        if (staff.isEmpty) const Padding(padding: EdgeInsets.all(40), child: Center(child: EmptyState(icon: Icons.payments_outlined, title: 'No staff members', subtitle: 'Add staff to see salary calculations')))
-        else LayoutBuilder(builder: (context, constraints) {
-          final columns = constraints.maxWidth >= 900 ? 3 : constraints.maxWidth >= 600 ? 2 : 1;
-          return GridView.builder(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: columns, crossAxisSpacing: 14, mainAxisSpacing: 14, childAspectRatio: columns == 1 ? 1.85 : 1.35), itemCount: staff.length, itemBuilder: (context, index) => _salaryCard(staff[index], orders));
-        }),
-      ]),
+    return LayoutBuilder(
+      builder: (context, outerConstraints) {
+        final isWide = outerConstraints.maxWidth > 700;
+        return SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(20, isWide ? 4 : 10, 20, 28),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            if (!isWide) ...[
+              LayoutBuilder(builder: (context, constraints) {
+                final title = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Salary Management', style: AppTypography.h1.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text('Current-month staff salary and performance summary', style: AppTypography.bodySmall.copyWith(color: AppColors.textTertiary)),
+                ]);
+                final button = OutlinedButton.icon(
+                  onPressed: _recalculating ? null : _recalculate,
+                  icon: _recalculating ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.calculate_rounded, size: 20),
+                  label: Text(_recalculating ? 'Calculating...' : 'Recalculate'),
+                );
+                return constraints.maxWidth < 560 ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [title, const SizedBox(height: 12), button]) : Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Expanded(child: title), button]);
+              }),
+              const SizedBox(height: AppSpacing.md),
+            ] else ...[
+              Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                OutlinedButton.icon(
+                  onPressed: _recalculating ? null : _recalculate,
+                  icon: _recalculating ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.calculate_rounded, size: 20),
+                  label: Text(_recalculating ? 'Calculating...' : 'Recalculate'),
+                ),
+              ]),
+              const SizedBox(height: AppSpacing.sm),
+            ],
+            SizedBox(width: double.infinity, child: TextField(
+              controller: _searchController,
+              onChanged: (value) => setState(() => _query = value),
+              decoration: InputDecoration(hintText: 'Search staff by name, code or email...', prefixIcon: const Icon(Icons.search_rounded), suffixIcon: _query.isEmpty ? null : IconButton(icon: const Icon(Icons.clear_rounded), onPressed: () { _searchController.clear(); setState(() => _query = ''); }), filled: true, fillColor: AppColors.surface, border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border))),
+            )),
+            const SizedBox(height: AppSpacing.md),
+            Container(padding: const EdgeInsets.all(AppSpacing.md), decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.primary.withValues(alpha: 0.18))), child: Text('Formula: Final salary = commission earned - return penalty. Fixed commission is per delivered order; percentage commission uses delivered COD.', style: AppTypography.bodySmall.copyWith(color: AppColors.primary))),
+            const SizedBox(height: AppSpacing.lg),
+            if (staff.isEmpty) const Padding(padding: EdgeInsets.all(40), child: Center(child: EmptyState(icon: Icons.payments_outlined, title: 'No staff members', subtitle: 'Add staff to see salary calculations')))
+            else LayoutBuilder(builder: (context, constraints) {
+              final columns = constraints.maxWidth >= 900 ? 4 : constraints.maxWidth >= 600 ? 3 : constraints.maxWidth >= 400 ? 2 : 1;
+              final ratio = columns >= 3 ? 1.15 : columns == 2 ? 1.35 : 1.85;
+              return GridView.builder(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: columns, crossAxisSpacing: 14, mainAxisSpacing: 14, childAspectRatio: ratio), itemCount: staff.length, itemBuilder: (context, index) => _salaryCard(staff[index], orders));
+            }),
+          ]),
+        );
+      },
     );
   }
 

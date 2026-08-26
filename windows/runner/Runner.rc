@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "beoncosmetic" "\0"
+            VALUE "CompanyName", "ZH Group of Companies" "\0"
+            VALUE "FileDescription", "ZH Group of Companies" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "beoncosmetic" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 ZH Group of Companies. All rights reserved." "\0"
             VALUE "OriginalFilename", "beoncosmetic.exe" "\0"
-            VALUE "ProductName", "beoncosmetic" "\0"
+            VALUE "ProductName", "ZH Group of Companies" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

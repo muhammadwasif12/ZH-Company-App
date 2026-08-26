@@ -169,7 +169,6 @@ class ExportService {
       final totalRevenue = deliveredOrders.fold<double>(0, (s, o) => s + o.codAmount);
       final totalCharges = deliveredOrders.fold<double>(0, (s, o) => s + o.deliveryCharges);
       final totalDiscount = deliveredOrders.fold<double>(0, (s, o) => s + o.discount);
-      final netProfit = totalRevenue - totalCharges - totalDiscount;
 
       pdf.addPage(
         pw.MultiPage(
@@ -198,7 +197,6 @@ class ExportService {
                 ['Total Gross Revenue (COD)', 'Rs. ${totalRevenue.toStringAsFixed(0)}'],
                 ['Total Shipping & Delivery Charges', 'Rs. ${totalCharges.toStringAsFixed(0)}'],
                 ['Total Discounts Granted', 'Rs. ${totalDiscount.toStringAsFixed(0)}'],
-                ['Net Profit', 'Rs. ${netProfit.toStringAsFixed(0)}'],
               ],
               headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white),
               headerDecoration: const pw.BoxDecoration(color: PdfColors.deepPurple800),

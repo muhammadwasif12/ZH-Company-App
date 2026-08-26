@@ -40,7 +40,22 @@ Thumbs.db
 /android/app/build
 /android/.cxx
 
+# Windows Build Artifacts
+*.zip
+*.msix
+*.appx
+*.exe
+*.dll
+
 # Miscellaneous
 .history
 .svn/
 migrate_working_dir/
+
+# Security - Extra Protection
+**/secret*
+**/secrets/
+*.secret
+google-services.json
+GoogleService-Info.plist
+firebase_options.dart

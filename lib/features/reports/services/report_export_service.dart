@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'package:excel/excel.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
@@ -186,6 +188,7 @@ class ReportExportService {
         );
 
       case 7: // Salary Report
+      default:
         return ReportExportData(
           title: 'Staff Salary & Commission Report',
           headers: ['Staff Name', 'Delivered', 'Returns', 'Commission (Rs.)', 'Penalty (Rs.)', 'Net Salary (Rs.)'],
@@ -207,28 +210,6 @@ class ReportExportService {
               net.toStringAsFixed(0),
             ];
           }).toList(),
-        );
-
-      case 8: // Profit / Loss Report
-      default:
-        final totalRevenue = orders.where((o) => o.status == 'delivered').fold<double>(0, (s, o) => s + o.codAmount);
-        final totalCharges = orders.where((o) => o.status == 'delivered').fold<double>(0, (s, o) => s + o.deliveryCharges);
-        final totalDiscount = orders.where((o) => o.status == 'delivered').fold<double>(0, (s, o) => s + o.discount);
-        final netProfit = totalRevenue - totalCharges - totalDiscount;
-
-        return ReportExportData(
-          title: 'Financial Profit & Loss Statement',
-          headers: ['Metric Category', 'Amount (PKR)'],
-          rows: [
-            ['Gross Delivered Revenue', 'Rs. ${totalRevenue.toStringAsFixed(0)}'],
-            ['Total Delivery Charges', 'Rs. ${totalCharges.toStringAsFixed(0)}'],
-            ['Discounts Granted', 'Rs. ${totalDiscount.toStringAsFixed(0)}'],
-            ['Net Profit / Loss', 'Rs. ${netProfit.toStringAsFixed(0)}'],
-          ],
-          summary: {
-            'Net Profit Margin': 'Rs. ${netProfit.toStringAsFixed(0)}',
-            'Statement Date': dateFormat.format(now),
-          },
         );
     }
   }
@@ -267,14 +248,39 @@ class ReportExportService {
     final sanitizedTitle = data.title.replaceAll(RegExp(r'[^\w\s\-]'), '_');
     final filename = 'ZH_Group_${sanitizedTitle}_${DateTime.now().millisecondsSinceEpoch}.xlsx';
 
-    final tempDir = await getTemporaryDirectory();
-    final file = File('${tempDir.path}/$filename');
-    await file.writeAsBytes(bytes);
+    // Desktop platforms: use FilePicker save dialog to let user choose location
+    final isDesktop = !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
 
-    await Share.shareXFiles(
-      [XFile(file.path, mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')],
-      text: 'ZH Group of Companies: ${data.title}',
-    );
+    if (isDesktop) {
+      String? outputFile;
+      try {
+        outputFile = await FilePicker.platform.saveFile(
+          dialogTitle: 'Save Excel Report',
+          fileName: filename,
+          type: FileType.custom,
+          allowedExtensions: ['xlsx'],
+        );
+      } catch (_) {}
+
+      if (outputFile == null) {
+        // Fallback: save to Downloads directory
+        final directory = await getDownloadsDirectory() ?? await getApplicationDocumentsDirectory();
+        outputFile = '${directory.path}/$filename';
+      }
+
+      final file = File(outputFile);
+      await file.writeAsBytes(bytes);
+    } else {
+      // Mobile: save to temp and share
+      final tempDir = await getTemporaryDirectory();
+      final file = File('${tempDir.path}/$filename');
+      await file.writeAsBytes(bytes);
+
+      await Share.shareXFiles(
+        [XFile(file.path, mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')],
+        text: 'ZH Group of Companies: ${data.title}',
+      );
+    }
   }
 
   /// Export or Print PDF document using Pdf & Printing libraries

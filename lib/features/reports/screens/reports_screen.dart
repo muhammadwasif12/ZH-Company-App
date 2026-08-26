@@ -21,7 +21,7 @@ class ReportsScreen extends ConsumerStatefulWidget {
 }
 
 class _ReportsScreenState extends ConsumerState<ReportsScreen> {
-  static const _tabs = ['Daily', 'Staff-wise', 'Product-wise', 'City-wise', 'Delivered', 'Return', 'COD', 'Salary', 'Profit/Loss'];
+  static const _tabs = ['Daily', 'Staff-wise', 'Product-wise', 'City-wise', 'Delivered', 'Return', 'COD', 'Salary'];
   int _selectedTab = 0;
   bool _isExporting = false;
 
@@ -148,8 +148,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       case 4: return _orderReport(orders.where((o) => o.status == 'delivered').toList(), title: 'Delivered orders', emptyTitle: 'No delivered orders', emptySubtitle: 'Delivered orders will appear here.');
       case 5: return _orderReport(orders.where((o) => o.status == 'returned').toList(), title: 'Returned orders', emptyTitle: 'No returned orders', emptySubtitle: 'Returned orders will appear here.');
       case 6: return _codReport(orders);
-      case 7: return _salaryReport(orders, staff);
-      default: return _profitReport(orders);
+      default: return _salaryReport(orders, staff);
     }
   }
 
@@ -223,19 +222,6 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     }).toList()));
   }
 
-  Widget _profitReport(List<OrderModel> orders) {
-    final delivered = orders.where((o) => o.status == 'delivered').toList();
-    final revenue = delivered.fold<double>(0, (sum, o) => sum + o.codAmount);
-    final charges = delivered.fold<double>(0, (sum, o) => sum + o.deliveryCharges);
-    final discount = delivered.fold<double>(0, (sum, o) => sum + o.discount);
-    final net = revenue - charges - discount;
-    return _section(title: 'Profit & loss', subtitle: 'Based on delivered orders only', child: _metricGrid([
-      _Metric('Delivered revenue', _money(revenue), Icons.trending_up_rounded, AppColors.success),
-      _Metric('Delivery charges', _money(charges), Icons.local_shipping_outlined, AppColors.warning),
-      _Metric('Discounts', _money(discount), Icons.discount_outlined, AppColors.error),
-      _Metric('Net profit', _money(net), Icons.account_balance_outlined, net >= 0 ? AppColors.success : AppColors.error),
-    ]));
-  }
 
   Widget _section({required String title, required String subtitle, required Widget child}) => Container(
     padding: const EdgeInsets.all(AppSpacing.md),

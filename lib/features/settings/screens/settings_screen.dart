@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../app.dart' show isDesktopPlatform;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -178,7 +179,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   List<(String, IconData)> get _sections {
     final isAdmin = ref.read(currentRoleProvider) == UserRole.admin;
     return [
-      if (isAdmin) ('Security', Icons.fingerprint_rounded),
+      // Security/fingerprint is only available on mobile for admins
+      if (isAdmin && !isDesktopPlatform) ('Security', Icons.fingerprint_rounded),
       ('Commission Defaults', Icons.calculate_rounded),
       ('Delivery Charges', Icons.local_shipping_rounded),
       ('Courier Companies', Icons.business_rounded),
@@ -297,26 +299,31 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final sections = _sections;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Settings',
-            style: AppTypography.h1.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            'Configure system defaults, inventory thresholds, and exports',
-            style: AppTypography.bodySmall.copyWith(
-              color: AppColors.textTertiary,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
+    return LayoutBuilder(
+      builder: (context, outerConstraints) {
+        final hideHeader = outerConstraints.maxWidth > 600;
+        return Padding(
+          padding: EdgeInsets.fromLTRB(20, hideHeader ? 4 : 16, 20, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (!hideHeader) ...[
+                Text(
+                  'Settings',
+                  style: AppTypography.h1.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Configure system defaults, inventory thresholds, and exports',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+              ],
           Expanded(
             child: LayoutBuilder(
               builder: (context, constraints) {
@@ -486,28 +493,31 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               },
             ),
           ),
-        ],
-      ),
+          ],
+        ),
+      );
+      },
     );
   }
 
   Widget _buildContent() {
-    final isAdmin = ref.watch(currentRoleProvider) == UserRole.admin;
-    final offset = isAdmin ? 1 : 0;
-    final idx = _selectedSection;
-
-    if (isAdmin && idx == 0) return _buildSecuritySection();
-
-    switch (idx - offset) {
-      case 0:
+    final sections = _sections;
+    if (_selectedSection >= sections.length) {
+      return const SizedBox();
+    }
+    final sectionName = sections[_selectedSection].$1;
+    switch (sectionName) {
+      case 'Security':
+        return _buildSecuritySection();
+      case 'Commission Defaults':
         return _buildCommission();
-      case 1:
+      case 'Delivery Charges':
         return _buildDeliveryCharges();
-      case 2:
+      case 'Courier Companies':
         return _buildCouriers();
-      case 3:
+      case 'Stock Thresholds':
         return _buildStockThresholdsResponsive();
-      case 4:
+      case 'Backup & Export':
         return _buildBackup();
       default:
         return const SizedBox();
@@ -2527,3 +2537,4 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 }
+

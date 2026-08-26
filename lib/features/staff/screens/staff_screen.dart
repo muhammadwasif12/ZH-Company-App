@@ -38,71 +38,85 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
           (staff.phone?.toLowerCase().contains(query) ?? false);
     }).toList();
 
-    return SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(
-        parent: BouncingScrollPhysics(),
-      ),
-      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
+    return LayoutBuilder(
+      builder: (context, outerConstraints) {
+        final isWide = outerConstraints.maxWidth > 700;
+        return SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: EdgeInsets.fromLTRB(20, isWide ? 4 : 10, 20, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              if (!isWide) ...[
+                // Header
+                Row(
                   children: [
-                    Text(
-                      'Staff Management',
-                      style: AppTypography.h1.copyWith(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.bold,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Staff Management',
+                            style: AppTypography.h1.copyWith(
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            'Manage staff accounts, edit details, and commission settings',
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppColors.textTertiary,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      'Manage staff accounts, edit details, and commission settings',
-                      style: AppTypography.bodySmall.copyWith(
-                        color: AppColors.textTertiary,
+                    const SizedBox(width: AppSpacing.md),
+                    ElevatedButton.icon(
+                      onPressed: () => _showAddStaffDialog(context, ref),
+                      icon: const Icon(Icons.person_add_rounded, size: 20),
+                      label: const Text('Add Staff'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              ElevatedButton.icon(
-                onPressed: () => _showAddStaffDialog(context, ref),
-                icon: const Icon(Icons.person_add_rounded, size: 20),
-                label: const Text('Add Staff'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
+                const SizedBox(height: AppSpacing.lg),
+              ] else ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: () => _showAddStaffDialog(context, ref),
+                      icon: const Icon(Icons.person_add_rounded, size: 20),
+                      label: const Text('Add Staff'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                    ),
+                  ],
                 ),
+                const SizedBox(height: AppSpacing.sm),
+              ],
+              _searchField(),
+              const SizedBox(height: AppSpacing.lg),
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: _buildStaffBody(context, ref, staffState.copyWith(staff: visibleStaff)),
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.lg),
-          _searchField(),
-          const SizedBox(height: AppSpacing.lg),
-
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: _buildStaffBody(
-              context,
-              ref,
-              staffState.copyWith(staff: visibleStaff),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -163,9 +177,9 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
                 _staffCard(context, ref, staffState.staff[index]),
           );
         }
-        final minWidth = constraints.maxWidth > 850
+        final minWidth = constraints.maxWidth > 920
             ? constraints.maxWidth
-            : 850.0;
+            : 920.0;
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: ConstrainedBox(
@@ -197,7 +211,7 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
                             Expanded(flex: 2, child: _headerText('PHONE')),
                             Expanded(flex: 2, child: _headerText('COMMISSION')),
                             Expanded(flex: 2, child: _headerText('PENALTY')),
-                            Expanded(flex: 1, child: _headerText('STATUS')),
+                            Expanded(flex: 2, child: _headerText('STATUS')),
                             Expanded(flex: 2, child: _headerText('ACTIONS')),
                           ],
                         ),
@@ -273,26 +287,34 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
                             ),
                           ),
                           Expanded(
-                            flex: 1,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: item.isActive
-                                    ? AppColors.success.withValues(alpha: 0.1)
-                                    : AppColors.error.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(
-                                  AppSpacing.radiusFull,
+                            flex: 2,
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
                                 ),
-                              ),
-                              child: Text(
-                                item.isActive ? 'Active' : 'Inactive',
-                                style: AppTypography.caption.copyWith(
+                                decoration: BoxDecoration(
                                   color: item.isActive
-                                      ? AppColors.success
-                                      : AppColors.error,
+                                      ? AppColors.success.withValues(alpha: 0.1)
+                                      : AppColors.error.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(
+                                    AppSpacing.radiusFull,
+                                  ),
+                                ),
+                                child: Text(
+                                  item.isActive ? 'Active' : 'Inactive',
+                                  textAlign: TextAlign.center,
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                  style: AppTypography.caption.copyWith(
+                                    color: item.isActive
+                                        ? AppColors.success
+                                        : AppColors.error,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 11,
+                                  ),
                                 ),
                               ),
                             ),
@@ -300,8 +322,12 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
                           Expanded(
                             flex: 2,
                             child: Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                                  visualDensity: VisualDensity.compact,
                                   icon: const Icon(
                                     Icons.edit_note_rounded,
                                     size: 20,
@@ -311,7 +337,11 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
                                   onPressed: () =>
                                       _showEditStaffDialog(context, ref, item),
                                 ),
+                                const SizedBox(width: 4),
                                 IconButton(
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                                  visualDensity: VisualDensity.compact,
                                   icon: const Icon(
                                     Icons.delete_rounded,
                                     size: 20,

@@ -53,9 +53,10 @@ dependencies:
   barcode_widget: ^2.0.4
 
   # Utilities
-  intl: ^0.19.0
+  intl: 0.20.2
   uuid: ^4.5.1
   url_launcher: ^6.3.1
+  device_preview: ^1.2.0
   collection: ^1.19.1
   csv: ^6.0.0
 
@@ -80,6 +81,9 @@ flutter_native_splash:
 flutter_launcher_icons:
   android: "ic_launcher"
   ios: true
+  windows:
+    generate: true
+    icon_size: 48
   image_path: "assets/logo/outer_app_logo.png"
 
 flutter:

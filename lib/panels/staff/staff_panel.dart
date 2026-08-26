@@ -22,10 +22,31 @@ class _StaffPanelState extends ConsumerState<StaffPanel> {
   int _bottomNavIndex = 0;
   String? _drawerScreen;
 
+  String get _activeKey {
+    if (_drawerScreen != null) return _drawerScreen!;
+    switch (_bottomNavIndex) {
+      case 1: return 'orders';
+      case 2: return 'salary';
+      case 3: return 'reports';
+      default: return 'dashboard';
+    }
+  }
+
+  void _selectSidebarItem(String key) {
+    setState(() {
+      switch (key) {
+        case 'dashboard': _drawerScreen = null; _bottomNavIndex = 0; break;
+        case 'orders': _drawerScreen = null; _bottomNavIndex = 1; break;
+        case 'salary': _drawerScreen = null; _bottomNavIndex = 2; break;
+        case 'reports': _drawerScreen = null; _bottomNavIndex = 3; break;
+        default: _drawerScreen = key; break;
+      }
+    });
+  }
+
   @override
   void initState() {
     super.initState();
-    // A fresh session must never reuse orders from the previous user/session.
     Future.microtask(() => ref.read(ordersProvider.notifier).loadOrders());
   }
 
@@ -34,15 +55,154 @@ class _StaffPanelState extends ConsumerState<StaffPanel> {
     final authState = ref.watch(authProvider);
     final userName = authState.profile?.fullName ?? 'Staff Member';
 
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWide = constraints.maxWidth > 900;
+        if (isWide) return _buildDesktopLayout(userName);
+        return _buildMobileLayout(userName);
+      },
+    );
+  }
+
+  // ─── Desktop Layout ───────────────────────────────────────
+  Widget _buildDesktopLayout(String userName) {
+    final email = ref.read(authProvider).profile?.email ?? ref.read(authProvider).supabaseUser?.email ?? '';
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: Row(
+        children: [
+          Container(
+            width: 260,
+            decoration: BoxDecoration(color: AppColors.surface, border: Border(right: BorderSide(color: AppColors.border))),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 32, 20, 8),
+                  child: Column(children: [
+                    Image.asset('assets/logo/splashscreen.png', height: 60, fit: BoxFit.contain,
+                      errorBuilder: (_, _, _) => const Icon(Icons.storefront_rounded, color: AppColors.primary, size: 40)),
+                    const SizedBox(height: 12),
+                    Text(userName, style: AppTypography.h4.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    if (email.isNotEmpty) Text(email, style: AppTypography.caption.copyWith(color: AppColors.textTertiary, fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(6)),
+                      child: Text('STAFF', style: AppTypography.caption.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 9, letterSpacing: 0.8)),
+                    ),
+                  ]),
+                ),
+                Divider(color: AppColors.border.withValues(alpha: 0.5), height: 24),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    children: [
+                      _sidebarItem('dashboard', 'Dashboard', Icons.space_dashboard_outlined, Icons.space_dashboard_rounded),
+                      _sidebarItem('orders', 'My Orders', Icons.receipt_long_outlined, Icons.receipt_long_rounded),
+                      _sidebarItem('salary', 'My Salary', Icons.payments_outlined, Icons.payments_rounded),
+                      _sidebarItem('reports', 'Reports', Icons.bar_chart_outlined, Icons.bar_chart_rounded),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () async => await ref.read(authProvider.notifier).signOut(),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(color: AppColors.error.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.error.withValues(alpha: 0.3))),
+                        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                          const Icon(Icons.logout_rounded, color: AppColors.error, size: 18),
+                          const SizedBox(width: 8),
+                          Text('Sign Out', style: AppTypography.button.copyWith(color: AppColors.error, fontWeight: FontWeight.bold)),
+                        ]),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  decoration: BoxDecoration(color: AppColors.background, border: Border(bottom: BorderSide(color: AppColors.border.withValues(alpha: 0.5)))),
+                  child: Row(children: [
+                    Text(_getTabTitle(_bottomNavIndex), style: AppTypography.h2.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
+                    const Spacer(),
+                  ]),
+                ),
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: KeyedSubtree(
+                      key: ValueKey(_activeKey),
+                      child: Align(
+                        alignment: Alignment.topCenter,
+                        child: _buildCurrentBody(userName),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sidebarItem(String key, String title, IconData icon, IconData activeIcon) {
+    final isActive = _activeKey == key;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 4),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _selectSidebarItem(key),
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+            decoration: BoxDecoration(
+              color: isActive ? AppColors.primary.withValues(alpha: 0.12) : Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: isActive ? AppColors.primary.withValues(alpha: 0.3) : Colors.transparent),
+            ),
+            child: Row(children: [
+              Icon(isActive ? activeIcon : icon, color: isActive ? AppColors.primary : AppColors.textTertiary, size: 20),
+              const SizedBox(width: 12),
+              Flexible(
+                child: Text(
+                  title,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  style: AppTypography.bodySmall.copyWith(
+                    color: isActive ? AppColors.textPrimary : AppColors.textSecondary,
+                    fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─── Mobile Layout (unchanged) ────────────────────────────
+  Widget _buildMobileLayout(String userName) {
     return PopScope(
       canPop: _drawerScreen == null && _bottomNavIndex == 0,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
         if (_drawerScreen != null) {
-          setState(() {
-            _drawerScreen = null;
-            _bottomNavIndex = 0;
-          });
+          setState(() { _drawerScreen = null; _bottomNavIndex = 0; });
         } else if (_bottomNavIndex != 0) {
           setState(() => _bottomNavIndex = 0);
         }
@@ -55,7 +215,10 @@ class _StaffPanelState extends ConsumerState<StaffPanel> {
         body: AnimatedSwitcher(
           duration: const Duration(milliseconds: 200),
           switchInCurve: Curves.easeOutCubic,
-          child: _buildCurrentBody(userName),
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: _buildCurrentBody(userName),
+          ),
         ),
         bottomNavigationBar: _drawerScreen == null ? _buildFloatingNav() : null,
       ),
