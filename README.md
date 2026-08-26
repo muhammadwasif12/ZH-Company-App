@@ -14,13 +14,19 @@
   <a href="#"><img src="https://img.shields.io/badge/Status-Production%20Ready-4CAF50?style=for-the-badge" alt="Status"></a>
 </p>
 
+<p align="center">
+  <img src="https://img.shields.io/badge/Platform-Android-3DDC84?style=flat-square&logo=android&logoColor=white" alt="Android">
+  <img src="https://img.shields.io/badge/Platform-Windows%20Desktop-0078D4?style=flat-square&logo=windows&logoColor=white" alt="Windows">
+  <img src="https://img.shields.io/badge/Architecture-x64-FF6F00?style=flat-square" alt="x64">
+</p>
+
 ---
 
 ## 📖 Overview
 
 **ZH Company App** is an enterprise-grade, ultra-premium order management and logistics ERP system tailored for **Beon Cosmetic**. Built with **Flutter**, **Riverpod**, **Supabase**, and **Cloudinary**, it provides seamless real-time inventory management, order processing, commission calculation, and financial ledger analytics.
 
-The application supports dual operational modes (**Admin Panel** and **Staff Panel**), ensuring administrative control while providing operational tools for staff members to process orders efficiently.
+The application supports **Android** and **Windows Desktop** platforms with dual operational modes (**Admin Panel** and **Staff Panel**), ensuring administrative control while providing operational tools for staff members to process orders efficiently.
 
 ---
 
@@ -60,13 +66,14 @@ The application supports dual operational modes (**Admin Panel** and **Staff Pan
 
 | Component | Technology | Purpose |
 | :--- | :--- | :--- |
-| **Framework** | [Flutter 3.x](https://flutter.dev) | Cross-platform UI compilation |
+| **Framework** | [Flutter 3.x](https://flutter.dev) | Cross-platform UI (Android + Windows Desktop) |
 | **Language** | [Dart 3.x](https://dart.dev) | Null-safe, robust code execution |
 | **State Management** | [Riverpod](https://riverpod.dev) | Reactive, scalable state management |
 | **Database & Auth** | [Supabase](https://supabase.com) | PostgreSQL DB, Auth, Realtime listeners |
 | **Media Hosting** | [Cloudinary](https://cloudinary.com) | Image hosting & secure signature deletion |
 | **Charts & UI** | [fl_chart](https://pub.dev/packages/fl_chart) / Google Fonts | Data visualization & modern typography |
 | **Security** | `local_auth` / `crypto` | Biometric lock & SHA-1 signature hashing |
+| **Platforms** | Android / Windows x64 | Mobile + Desktop deployment |
 
 ---
 
@@ -104,6 +111,10 @@ lib/
 - [Android Studio](https://developer.android.com/studio) or VS Code with Flutter extension
 - Supabase project credentials & Cloudinary account details
 
+**Additional for Windows Desktop development:**
+- [Visual Studio 2022](https://visualstudio.microsoft.com/) with **"Desktop development with C++"** workload
+- Windows 10 SDK (10.0.26100.0 or later)
+
 ### 1. Clone the Repository
 ```bash
 git clone https://github.com/muhammadwasif12/ZH-Company-App.git
@@ -134,14 +145,16 @@ flutter run
 
 ## 📦 Building Production Release
 
-### Option A: Universal Release APK (Recommended for all Android phones)
+### 📱 Android
+
+#### Option A: Universal Release APK (Recommended for all Android phones)
 Generates a single installer compatible with all device architectures:
 ```bash
 flutter build apk --release
 ```
 > **Output:** `build/app/outputs/flutter-apk/app-release.apk`
 
-### Option B: Split Per-ABI Release APKs (Optimized file size)
+#### Option B: Split Per-ABI Release APKs (Optimized file size)
 Generates separate lightweight APKs tailored for arm64-v8a, armeabi-v7a, and x86_64:
 ```bash
 flutter build apk --release --split-per-abi
@@ -150,10 +163,50 @@ flutter build apk --release --split-per-abi
 
 ---
 
+### 🖥️ Windows Desktop
+
+#### Build Release
+Generates a standalone Windows desktop application (x64):
+```bash
+flutter build windows --release
+```
+> **Output:** `build/windows/x64/runner/Release/`
+
+#### Output Contents
+| File | Description |
+| :--- | :--- |
+| `beoncosmetic.exe` | Main application executable |
+| `flutter_windows.dll` | Flutter engine runtime |
+| `*.dll` (plugins) | Platform plugin libraries |
+| `data/` | App assets, fonts, shaders & compiled code |
+
+#### 📤 Distributing to Clients
+
+To share the Windows app with clients (e.g., via WhatsApp, Google Drive, USB):
+
+1. **Zip the entire Release folder:**
+   ```
+   build/windows/x64/runner/Release/
+   ```
+2. **Send the `.zip` file** to your client.
+3. **Client instructions:**
+   - Extract the zip file
+   - Double-click `beoncosmetic.exe` to run
+   - **No installation required** — no Flutter, Visual Studio, or any dev tools needed
+
+> **⚠️ Client Requirements:**
+> - Windows 10/11 (64-bit)
+> - [Visual C++ Redistributable 2015-2022](https://aka.ms/vs/17/release/vc_redist.x64.exe) — pre-installed on most PCs; install only if the app crashes on launch
+
+---
+
 ## 🔒 Security & Privacy
 
 - All secret API keys and database tokens are kept strictly in `.env` and `local.properties`.
 - Comprehensive `.gitignore` rules ensure no environment files, keystores, or build artifacts are exposed in version control.
+- Build artifacts (`.exe`, `.dll`, `.zip`, `.msix`, `.apk`) are excluded from Git.
+- Cloudinary image deletion uses secure **HMAC SHA-1 signature hashing**.
+- Biometric authentication via `local_auth` for device-level security.
 
 ---
 
